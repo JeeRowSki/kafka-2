@@ -1,0 +1,144 @@
+root@kafktrain:/opt/kafka/practice-streams# printf '%s\n' \
+'user2:{"message_id":"test-001","sender_id":"user1","recipient_id":"user2","text":"Привет, это тестовое сообщение"}' \
+| docker exec -i kafka-0 \
+  /opt/kafka/bin/kafka-console-producer.sh \
+  --bootstrap-server kafka-0:9092 \
+  --topic messages \
+  --property parse.key=true \
+  --property key.separator=:
+root@kafktrain:/opt/kafka/practice-streams# docker compose -f compose.yml logs processor | grep 'test-001'
+processor-1  | [2026-11-22 14:35:30,722] [1] [INFO] MESSAGE PROCESSED id=test-001 sender=user1 recipient=user2 text=Привет, это тестовое сообщение
+root@kafktrain:/opt/kafka/practice-streams# printf '%s\n' \
+'user2:{"user_id":"user2","blocked_user_id":"user1","action":"block"}' \
+| docker exec -i kafka-0 \
+  /opt/kafka/bin/kafka-console-producer.sh \
+  --bootstrap-server kafka-0:9092 \
+  --topic blocked_users \
+  --property parse.key=true \
+  --property key.separator=:
+root@kafktrain:/opt/kafka/practice-streams# docker compose -f compose.yml logs processor | grep 'BLOCK UPDATE user=user2 blocked=user1 action=block'
+processor-1  | [2026-11-22 14:36:58,171] [1] [INFO] BLOCK UPDATE user=user2 blocked=user1 action=block
+root@kafktrain:/opt/kafka/practice-streams# printf '%s\n' \
+'user2:{"message_id":"test-002","sender_id":"user1","recipient_id":"user2","text":"Сообщение от заблокированного пользователя"}' \
+| docker exec -i kafka-0 \
+  /opt/kafka/bin/kafka-console-producer.sh \
+  --bootstrap-server kafka-0:9092 \
+  --topic messages \
+  --property parse.key=true \
+  --property key.separator=:
+root@kafktrain:/opt/kafka/practice-streams# docker compose -f compose.yml logs processor | grep 'test-002'
+processor-1  | [2026-11-22 14:37:17,778] [1] [INFO] MESSAGE BLOCKED id=test-002 sender=user1 recipient=user2
+root@kafktrain:/opt/kafka/practice-streams# printf '%s\n' \
+'user2:{"user_id":"user2","blocked_user_id":"user1","action":"unblock"}' \
+| docker exec -i kafka-0 \
+  /opt/kafka/bin/kafka-console-producer.sh \
+  --bootstrap-server kafka-0:9092 \
+  --topic blocked_users \
+  --property parse.key=true \
+  --property key.separator=:
+root@kafktrain:/opt/kafka/practice-streams# docker compose -f compose.yml logs processor | grep 'BLOCK UPDATE user=user2 blocked=user1 action=unblock'
+processor-1  | [2026-11-22 14:38:23,125] [1] [INFO] BLOCK UPDATE user=user2 blocked=user1 action=unblock
+root@kafktrain:/opt/kafka/practice-streams# printf '%s\n' \
+'user2:{"message_id":"test-003","sender_id":"user1","recipient_id":"user2","text":"Сообщение после разблокировки"}' \
+| docker exec -i kafka-0 \
+  /opt/kafka/bin/kafka-console-producer.sh \
+  --bootstrap-server kafka-0:9092 \
+  --topic messages \
+  --property parse.key=true \
+  --property key.separator=:
+root@kafktrain:/opt/kafka/practice-streams# docker compose -f compose.yml logs processor | grep 'test-003'
+processor-1  | [2026-11-22 14:38:45,904] [1] [INFO] MESSAGE PROCESSED id=test-003 sender=user1 recipient=user2 text=Сообщение после разблокировки
+root@kafktrain:/opt/kafka/practice-streams# printf '%s\n' \
+'секрет:{"word":"секрет","action":"add"}' \
+| docker exec -i kafka-0 \
+  /opt/kafka/bin/kafka-console-producer.sh \
+  --bootstrap-server kafka-0:9092 \
+  --topic banned_words \
+  --property parse.key=true \
+  --property key.separator=:
+root@kafktrain:/opt/kafka/practice-streams# docker compose -f compose.yml logs processor | grep 'WORD UPDATE word=секрет action=add'
+processor-1  | [2026-11-22 14:39:47,281] [1] [INFO] WORD UPDATE word=секрет action=add
+root@kafktrain:/opt/kafka/practice-streams# printf '%s\n' \
+'user2:{"message_id":"test-004","sender_id":"user1","recipient_id":"user2","text":"Это секрет, который нельзя раскрывать"}' \
+| docker exec -i kafka-0 \
+  /opt/kafka/bin/kafka-console-producer.sh \
+  --bootstrap-server kafka-0:9092 \
+  --topic messages \
+  --property parse.key=true \
+  --property key.separator=:
+root@kafktrain:/opt/kafka/practice-streams# docker compose -f compose.yml logs processor | grep 'test-004'
+processor-1  | [2026-11-22 14:40:07,156] [1] [INFO] MESSAGE PROCESSED id=test-004 sender=user1 recipient=user2 text=Это ******, который нельзя раскрывать
+root@kafktrain:/opt/kafka/practice-streams# printf '%s\n' \
+'секрет:{"word":"секрет","action":"remove"}' \
+| docker exec -i kafka-0 \
+  /opt/kafka/bin/kafka-console-producer.sh \
+  --bootstrap-server kafka-0:9092 \
+  --topic banned_words \
+  --property parse.key=true \
+  --property key.separator=:
+root@kafktrain:/opt/kafka/practice-streams# docker compose -f compose.yml logs processor | grep 'WORD UPDATE word=секрет action=remove'
+processor-1  | [2026-11-22 14:41:19,262] [1] [INFO] WORD UPDATE word=секрет action=remove
+root@kafktrain:/opt/kafka/practice-streams# printf '%s\n' \
+'user2:{"message_id":"test-005","sender_id":"user1","recipient_id":"user2","text":"Это секрет, который теперь можно раскрывать"}' \
+| docker exec -i kafka-0 \
+  /opt/kafka/bin/kafka-console-producer.sh \
+  --bootstrap-server kafka-0:9092 \
+  --topic messages \
+  --property parse.key=true \
+  --property key.separator=:
+root@kafktrain:/opt/kafka/practice-streams# docker compose -f compose.yml logs processor | grep 'test-005'
+processor-1  | [2026-11-22 14:41:41,102] [1] [INFO] MESSAGE PROCESSED id=test-005 sender=user1 recipient=user2 text=Это секрет, который теперь можно раскрывать
+root@kafktrain:/opt/kafka/practice-streams# printf '%s\n' \
+'user2:{"user_id":"user2","blocked_user_id":"user3","action":"block"}' \
+| docker exec -i kafka-0 \
+  /opt/kafka/bin/kafka-console-producer.sh \
+  --bootstrap-server kafka-0:9092 \
+  --topic blocked_users \
+  --property parse.key=true \
+  --property key.separator=:
+root@kafktrain:/opt/kafka/practice-streams# printf '%s\n' \
+'пароль:{"word":"пароль","action":"add"}' \
+| docker exec -i kafka-0 \
+  /opt/kafka/bin/kafka-console-producer.sh \
+  --bootstrap-server kafka-0:9092 \
+  --topic banned_words \
+  --property parse.key=true \
+  --property key.separator=:
+root@kafktrain:/opt/kafka/practice-streams# docker compose -f compose.yml logs processor | grep 'WORD UPDATE word=пароль action=add'
+processor-1  | [2026-11-22 14:43:58,490] [1] [INFO] WORD UPDATE word=пароль action=add
+root@kafktrain:/opt/kafka/practice-streams# docker compose -f compose.yml restart processor
+[+] restart 0/1
+ ⠏ Container kafka-practice-streams-processor-1 Restarting 2.0s
+root@kafktrain:/opt/kafka/practice-streams# docker compose -f compose.yml logs --since=2m processor | grep -E 'Recovery complete|Restore complete|Worker ready'
+processor-1  | [2026-11-22 14:44:26,398] [1] [INFO] [^---Recovery]: Recovery complete
+processor-1  | [2026-11-22 14:44:26,399] [1] [INFO] [^---Recovery]: Restore complete!
+processor-1  | [2026-11-22 14:44:26,410] [1] [INFO] [^---Recovery]: Worker ready
+root@kafktrain:/opt/kafka/practice-streams# printf '%s\n' \
+'user2:{"message_id":"test-006","sender_id":"user3","recipient_id":"user2","text":"Проверка блокировки после перезапуска"}' \
+| docker exec -i kafka-0 \
+  /opt/kafka/bin/kafka-console-producer.sh \
+  --bootstrap-server kafka-0:9092 \
+  --topic messages \
+  --property parse.key=true \
+  --property key.separator=:
+root@kafktrain:/opt/kafka/practice-streams# docker compose -f compose.yml logs processor | grep 'test-006'
+processor-1  | [2026-11-22 14:46:11,599] [1] [INFO] MESSAGE BLOCKED id=test-006 sender=user3 recipient=user2
+root@kafktrain:/opt/kafka/practice-streams# printf '%s\n' \
+'user2:{"message_id":"test-007","sender_id":"user1","recipient_id":"user2","text":"Мой пароль должен быть скрыт"}' \
+| docker exec -i kafka-0 \
+  /opt/kafka/bin/kafka-console-producer.sh \
+  --bootstrap-server kafka-0:9092 \
+  --topic messages \
+  --property parse.key=true \
+  --property key.separator=:
+root@kafktrain:/opt/kafka/practice-streams# docker compose -f compose.yml logs processor | grep 'test-007'
+processor-1  | [2026-11-22 14:46:36,068] [1] [INFO] MESSAGE PROCESSED id=test-007 sender=user1 recipient=user2 text=Мой ****** должен быть скрыт
+root@kafktrain:/opt/kafka/practice-streams# docker exec kafka-0 \
+  /opt/kafka/bin/kafka-console-consumer.sh \
+  --bootstrap-server kafka-0:9092 \
+  --topic filtered_messages \
+  --from-beginning \
+  --timeout-ms 5000 \
+  2>/dev/null | grep 'test-007'
+{"message_id":"test-007","sender_id":"user1","recipient_id":"user2","text":"\u041c\u043e\u0439 ****** \u0434\u043e\u043b\u0436\u0435\u043d \u0431\u044b\u0442\u044c \u0441\u043a\u0440\u044b\u0442","__faust":{"ns":"models.Message"}}
+root@kafktrain:/opt/kafka/practice-streams#
