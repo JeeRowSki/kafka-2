@@ -1,0 +1,40 @@
+import faust
+
+
+class Message(faust.Record, serializer="json"):
+    message_id: str
+    sender_id: str
+    recipient_id: str
+    text: str
+
+
+class BlockEvent(faust.Record, serializer="json"):
+    user_id: str
+    blocked_user_id: str
+    action: str
+
+
+class WordEvent(faust.Record, serializer="json"):
+    word: str
+    action: str
+root@kafktrain:/opt/kafka/practice-streams# cat reassignment-blocked.json
+{
+  "version": 1,
+  "partitions": [
+    {
+      "topic": "message-filter-service-blocked_users_state-changelog",
+      "partition": 0,
+      "replicas": [0, 1, 2]
+    },
+    {
+      "topic": "message-filter-service-blocked_users_state-changelog",
+      "partition": 1,
+      "replicas": [1, 2, 0]
+    },
+    {
+      "topic": "message-filter-service-blocked_users_state-changelog",
+      "partition": 2,
+      "replicas": [2, 0, 1]
+    }
+  ]
+}
