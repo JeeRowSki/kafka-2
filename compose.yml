@@ -1,0 +1,33 @@
+name: kafka-practice-streams
+
+services:
+  processor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    restart: unless-stopped
+
+    environment:
+      KAFKA_BROKERS: "kafka://kafka-0:9092,kafka-1:9092,kafka-2:9092"
+      PYTHONUNBUFFERED: "1"
+
+    volumes:
+      - faust_data:/app/data
+
+    networks:
+      - kafka-net
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+networks:
+  kafka-net:
+    external: true
+    name: kafka-lab_kafka-net
+
+volumes:
+  faust_data:
